@@ -10,7 +10,7 @@ class Vk:
         self.token = token
         self.apiUrl = 'https://api.vk.com/method/'
         self.methods = {'mget': 'messages.get', 'msend': 'messages.send', 'mgetdg': 'messages.getDialogs',
-                        'mgetbid': 'messages.getById'}
+                        'mgetbid': 'messages.getById', 'msearch': 'messages.search'}
         self.apiVer = '5.50'
         self.commonParams = {'access_token': self.token, 'v': self.apiVer}
 
@@ -78,7 +78,20 @@ class Vk:
             return j['response']['items']
         elif 'error' in j.keys():
             raise ApiError('Cannot get message(s) by id: ' + j['error']['error_msg'])
-        
+
+    def messages_search(self, q, preview_length=0, count=20):
+        """
+        Search messages by substring.
+        :param q: searched substring
+        :param preview_length: length of message preview
+        :param count: number of messages to get
+        :return: list of message objects
+        """
+        j = self.__execute('msearch', {'q': q, 'preview_length': preview_length, 'count': count})
+        if 'response' in j.keys():
+            return j['response']['items']
+        elif 'error' in j.keys():
+            raise ApiError('Cannot find message(s): ' + j['error']['error_msg'])
 
     def __execute(self, method, args):
         """
