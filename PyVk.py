@@ -9,7 +9,8 @@ class Vk:
         """
         self.token = token
         self.apiUrl = 'https://api.vk.com/method/'
-        self.methods = {'mget': 'messages.get', 'msend': 'messages.send', 'mgetdg': 'messages.getDialogs'}
+        self.methods = {'mget': 'messages.get', 'msend': 'messages.send', 'mgetdg': 'messages.getDialogs',
+                        'mgetbid': 'messages.getById'}
         self.apiVer = '5.50'
         self.commonParams = {'access_token': self.token, 'v': self.apiVer}
 
@@ -18,8 +19,7 @@ class Vk:
         Checks if access token is usable or not.
         :return: True or None
         """
-        r = requests.get(self.apiUrl + 'messages.get', params=self.commonParams)
-        j = r.json()
+        j = self.__execute('mget', {})
         print(j)
         if 'response' in j.keys():
             return True
@@ -28,15 +28,12 @@ class Vk:
 
     def messages_get(self, out=0, count=20):
         """
+        Get messages.
         :param out: get sent messages (0 or 1)
         :param count: number of messages to get
         :return: list of message objects.
         """
-        p = self.commonParams.copy()
-        p['out'] = out
-        p['count'] = count
-        r = requests.get(self.apiUrl + self.methods['mget'], params=p)
-        j = r.json()
+        j = self.__execute('mget', {'out': out, 'count': count})
         if 'response' in j.keys():
             return j['response']['items']
         elif 'error' in j.keys():
@@ -44,19 +41,13 @@ class Vk:
 
     def messages_send(self, user_id, message, attachments=None):
         """
-        Sends message to peer
+        Sends message to peer.
         :param user_id: receiving users identifier
         :param message: message's body
         :param attachments: comma-separated attachments in format <type><owner_id>_<media_id>
         :return: message's identifier if operation was successful
         """
-        p = self.commonParams.copy()
-        p['user_id'] = user_id
-        p['message'] = message
-        if attachments:
-            p['attachment'] = attachments
-        r = requests.get(self.apiUrl + self.methods['msend'], params=p)
-        j = r.json()
+        j = self.__execute('msend', {'user_id': user_id, 'message': message, 'attachment': attachments})
         if 'response' in j.keys():
             return j['response']
         elif 'error' in j.keys():
@@ -64,20 +55,43 @@ class Vk:
 
     def messages_get_dialogs(self, count=20, unread=0):
         """
-        Get user's dialogs list
+        Get user's dialogs list.
         :param count: number of dialogs to get
         :param unread: get dialogs with unread messages only (1 or 0)
         :return: list of dialog objects
         """
-        p = self.commonParams.copy()
-        p['count'] = count
-        p['unread'] = unread
-        r = requests.get(self.apiUrl + self.methods['mgetdg'], params=p)
-        j = r.json()
+        j = self.__execute('mgetdg', {'count': count, 'unread': unread})
         if 'response' in j.keys():
             return j['response']['items']
         elif 'error' in j.keys():
             raise ApiError('Cannot get dialogs: ' + j['error']['error_msg'])
+
+    def messages_get_by_id(self, message_ids, preview_length=0):
+        """
+        Get messages by their id.
+        :param message_ids: list of message id's,comma-separated
+        :param preview_length: length of message preview
+        :return: list of message objects
+        """
+        j = self.__execute('mgetbid', {'message_ids': message_ids, 'preview_length': preview_length})
+        if 'response' in j.keys():
+            return j['response']['items']
+        elif 'error' in j.keys():
+            raise ApiError('Cannot get message(s) by id: ' + j['error']['error_msg'])
+        
+
+    def __execute(self, method, args):
+        """
+        Execute API method.
+        :param method: key of method name from methods dictionary
+        :param args: dictionary of method arguments
+        :return: json object
+        """
+        p = self.commonParams.copy()
+        p.update(args)
+        p = dict((k, v) for k, v in p.items() if v)
+        r = requests.get(self.apiUrl + self.methods[method], params=p)
+        return r.json()
 
 
 class ApiError(BaseException):
