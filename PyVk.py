@@ -10,7 +10,8 @@ class Vk:
         self.token = token
         self.apiUrl = 'https://api.vk.com/method/'
         self.methods = {'mget': 'messages.get', 'msend': 'messages.send', 'mgetdg': 'messages.getDialogs',
-                        'mgetbid': 'messages.getById', 'msearch': 'messages.search', 'mgeth': 'messages.getHistory'}
+                        'mgetbid': 'messages.getById', 'msearch': 'messages.search', 'mgeth': 'messages.getHistory',
+                        'mgetha': 'messages.getHistoryAttachments'}
         self.apiVer = '5.50'
         self.commonParams = {'access_token': self.token, 'v': self.apiVer}
 
@@ -106,6 +107,20 @@ class Vk:
             return j['response']['items']
         elif 'error' in j.keys():
             raise ApiError('Cannot get message history: ' + j['error']['error_msg'])
+
+    def messages_get_history_a(self, peer_id, media_type, count):
+        """
+        Gets attachments of dialog
+        :param peer_id: peer identifier
+        :param media_type: type of attachments
+        :param count: number of attachments to get
+        :return: list of attachment objects
+        """
+        j = self.__execute('mgetha', {'peer_id': peer_id, 'media_type': media_type, 'count': count})
+        if 'response' in j.keys():
+            return j['response']['items']
+        elif 'error' in j.keys():
+            raise ApiError('Cannot get attachment history: ' + j['error'['error_msg']])
 
     def __execute(self, method, args):
         """
