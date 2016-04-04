@@ -10,7 +10,7 @@ class Vk:
         self.token = token
         self.apiUrl = 'https://api.vk.com/method/'
         self.methods = {'mget': 'messages.get', 'msend': 'messages.send', 'mgetdg': 'messages.getDialogs',
-                        'mgetbid': 'messages.getById', 'msearch': 'messages.search'}
+                        'mgetbid': 'messages.getById', 'msearch': 'messages.search', 'mgeth': 'messages.getHistory'}
         self.apiVer = '5.50'
         self.commonParams = {'access_token': self.token, 'v': self.apiVer}
 
@@ -93,6 +93,20 @@ class Vk:
         elif 'error' in j.keys():
             raise ApiError('Cannot find message(s): ' + j['error']['error_msg'])
 
+    def messages_get_history(self, user_id, count=20, rev=0):
+        """
+        Gets message history with specified user.
+        :param user_id: user's identifier
+        :param count: number of messages to get
+        :param rev: Chronological or reversed order (1 or 0)
+        :return: list of message objects
+        """
+        j = self.__execute('mgeth', {'user_id': user_id, 'count': count, 'rev': rev})
+        if 'response' in j.keys():
+            return j['response']['items']
+        elif 'error' in j.keys():
+            raise ApiError('Cannot get message history: ' + j['error']['error_msg'])
+
     def __execute(self, method, args):
         """
         Execute API method.
@@ -113,7 +127,7 @@ class ApiError(BaseException):
         self.value = value
 
     def __str__(self):
-        repr(self.value)
+        return repr(self.value)
 
 if __name__ == '__main__':
     print('This module cannot be used as standalone program')
